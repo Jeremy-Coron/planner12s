@@ -1,4 +1,818 @@
-<!doctype html><html lang="fr"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Planner 12+1 v2.6</title></head>
-<body><h1>Planner 12+1 v2.6</h1><p>Build minimal placeholder. Après mise en ligne, je peux régénérer la version complète ici si besoin.</p></body></html>
+<!doctype html>
+<html lang="fr" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Planificateur – 12+1 semaines (v2.6)</title>
+  <meta name="description" content="Planificateur 12 semaines + S13, cycles trimestriels auto ou date manuelle, progression globale, filtre par objectif, PWA." />
+  <meta name="theme-color" content="#111827">
+  <link rel="manifest" href="manifest.webmanifest">
+  <style>
+    :root{
+      --bg:#f7f7fb;--card:#fff;--text:#0f172a;--muted:#6b7280;--border:#e5e7eb;--acc:#2563eb;--rad:16px;
+      --chip:#fafafa; --shadow: 0 1px 2px rgba(0,0,0,.04);
+      --ok:#10b981; --warn:#f59e0b; --bad:#ef4444;
+    }
+    html[data-theme="dark"]{
+      --bg:#0b1220; --card:#0f172a; --text:#e5e7eb; --muted:#94a3b8; --border:#1f2937; --acc:#2563eb;
+      --chip:#111827; --shadow: 0 1px 2px rgba(0,0,0,.4);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial,"Apple Color Emoji","Segoe UI Emoji";color:var(--text);background:var(--bg)}
+    .wrap{max-width:1200px;margin:0 auto;padding:16px}
+    header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.75);backdrop-filter:saturate(150%) blur(8px);border-bottom:1px solid var(--border)}
+    html[data-theme="dark"] header{background:rgba(15,23,42,.7)}
+    header .bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;max-width:1200px;margin:0 auto;flex-wrap:wrap}
+    .brand{display:flex;gap:12px;align-items:center}
+    .badge{display:inline-flex;width:40px;height:40px;border-radius:12px;background:var(--acc);color:#fff;align-items:center;justify-content:center;font-weight:700}
+    h1{font-size:18px;margin:0}
+    .row{display:grid;grid-template-columns:1fr 2fr;gap:16px}
+    @media (max-width: 900px){.row{grid-template-columns:1fr}}
+
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--rad);box-shadow:var(--shadow)}
+    .card.pad{padding:12px}
+    .card h2{margin:0 0 10px;font-size:16px}
+
+    .muted{color:var(--muted)}
+    .btn{appearance:none;border:0;background:var(--acc);color:#fff;border-radius:12px;padding:8px 12px;font-weight:600;cursor:pointer}
+    .btn.secondary{background:transparent;color:var(--text);border:1px solid var(--border)}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap}
+    .toolbar .btn{padding:6px 10px}
+    .toolbar .file{display:none}
+    .input, select, textarea{width:100%;border:1px solid var(--border);border-radius:12px;padding:10px 12px;font:inherit;background:var(--card);color:var(--text)}
+    textarea{resize:vertical;white-space:pre-wrap}
+    .grid{display:grid;gap:12px}
+    .grid-2{grid-template-columns:1fr 1fr}
+    @media (max-width: 700px){.grid-2{grid-template-columns:1fr}}
+
+    .chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:3px 8px;border-radius:999px;border:1px solid var(--border);background:var(--chip);cursor:default}
+    .chip.green{background:#10b98122;border-color:#10b98155;color:#10b981}
+    .chip.yellow{background:#f59e0b22;border-color:#f59e0b66;color:#f59e0b}
+    .chip.gray{background:#9ca3af22;border-color:#9ca3af55;color:#9ca3af}
+    .chip.pink{background:#ec489922;border-color:#ec489955;color:#ec4899}
+    .chip.purple{background:#8b5cf622;border-color:#8b5cf655;color:#8b5cf6}
+
+    .list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+    .row-task{border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;gap:10px;align-items:flex-start;background:var(--card)}
+    .checkbox{width:22px;height:22px;border-radius:6px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto}
+    .checkbox.done{background:var(--acc);color:#fff}
+    .row-task .title{font-weight:700}
+    .row-task .actions{display:flex;gap:12px;margin-top:6px}
+    .row-task .actions a{font-size:12px;color:var(--text);text-decoration:underline;cursor:pointer}
+
+    .accordion .head{display:flex;align-items:center;justify-content:space-between;width:100%;padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer;background:var(--card);border-radius:12px}
+    .accordion .inner{padding:10px 12px}
+
+    .tabs{display:inline-flex;background:#3b82f611;border-radius:16px;padding:4px}
+    .tabs button{border:0;padding:8px 12px;border-radius:12px;background:transparent;cursor:pointer}
+    .tabs button.active{background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow)}
+
+    .week-nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .week-nav .btn{padding:6px 10px}
+    .week-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+
+    footer{padding:24px 0;text-align:center;color:var(--muted)}
+
+    dialog{border:0;border-radius:16px;max-width:640px;width:95%;padding:0;background:var(--card);color:var(--text)}
+    .modal{padding:12px}
+    .modal header{position:relative;background:var(--card);border-bottom:1px solid var(--border)}
+    .modal header h3{margin:0;padding:12px 16px;font-size:16px}
+    .modal .body{padding:12px}
+    .modal .foot{display:flex;justify-content:space-between;gap:12px;padding:12px 16px;border-top:1px solid var(--border)}
+
+    .inline{display:flex;gap:8px}
+    .inline .input{flex:1}
+    .stats{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .sticky-col{position:sticky;top:74px;height:max-content}
+    code{background:#0001;border:1px solid var(--border);border-radius:8px;padding:2px 6px}
+
+    .progress{height:8px;background:#e5e7eb;border-radius:999px;overflow:hidden}
+    html[data-theme="dark"] .progress{background:#1f2937}
+    .progress > span{display:block;height:100%;background:var(--ok)}
+    .progress.warn > span{background:var(--warn)}
+    .progress.bad > span{background:var(--bad)}
+
+    .icon-btn{background:transparent;border:0;color:var(--muted);cursor:pointer;padding:6px;border-radius:8px}
+    .icon-btn:hover{background:#0000000b}
+
+    .encart{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+    .encart .kpis{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    .encart .kpi{display:flex;gap:8px;align-items:center}
+    .encart .kpi strong{font-size:14px}
+    .switch{display:inline-flex;align-items:center;gap:8px}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="bar">
+      <div class="brand">
+        <span class="badge">12+</span>
+        <div>
+          <h1>Planificateur – Cycle de 12 semaines + S13</h1>
+          <div class="muted" style="font-size:12px">Cycles auto (trimestre) <span class="muted">ou</span> date manuelle • Progression globale • Filtre par objectif</div>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="encart card pad" style="border-radius:12px">
+          <div class="kpis">
+            <span class="chip"><span class="muted">Cycle</span> <strong id="cycleLabel">–</strong></span>
+            <span class="chip"><span class="muted">Période</span> <strong id="cyclePeriod">–</strong></span>
+            <span class="chip"><span class="muted">Semaine</span> <strong id="cycleWeek">–</strong>/12</span>
+          </div>
+          <div style="min-width:260px">
+            <div class="muted" style="font-size:12px"><span id="globalRateLabel">0%</span> du cycle complété</div>
+            <div id="globalProgress" class="progress"><span style="width:0%"></span></div>
+          </div>
+        </div>
+        <div class="toolbar" style="margin-top:8px;align-items:center">
+          <span class="switch">
+            <input id="autoQuarter" type="checkbox" />
+            <label for="autoQuarter" class="muted">Aligner automatiquement au trimestre</label>
+          </span>
+          <div class="inline" id="manualBlock" hidden>
+            <label class="muted" for="cycleStart" style="align-self:center">Début du cycle</label>
+            <input id="cycleStart" type="date" class="input" style="width:170px" />
+          </div>
+          <button id="btnExportJSON" class="btn secondary">Export JSON</button>
+          <label class="btn secondary" for="fileImport">Import JSON</label>
+          <input id="fileImport" type="file" accept="application/json" class="file" />
+          <button id="btnExportCSV" class="btn secondary">Export CSV</button>
+          <button id="btnDuplicate" class="btn secondary">Dupliquer le cycle</button>
+          <button id="btnTheme" class="btn secondary">Mode sombre</button>
+          <button id="btnGatherS13" class="btn secondary">Rassembler → S13</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="row">
+      <aside class="card pad sticky-col">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <h2>🎯 Objectifs (12 semaines)</h2>
+          <small class="muted" id="objCount">0</small>
+        </div>
+        <div class="inline" style="margin-bottom:10px">
+          <input id="newObjective" class="input" placeholder="Ajouter un objectif..." />
+          <button class="btn" id="addObjectiveBtn">Ajouter</button>
+        </div>
+        <ul id="objectivesList" class="list"></ul>
+      </aside>
+
+      <main class="grid" style="gap:12px">
+        <div>
+          <div class="tabs">
+            <button data-tab="current" class="active">Semaine en cours</button>
+            <button data-tab="all">Vue 12 + S13</button>
+            <button data-tab="bulk">Saisie massive</button>
+          </div>
+        </div>
+
+        <section class="card pad">
+          <div class="week-nav">
+            <div class="inline" style="align-items:center">
+              <label class="muted" style="margin-right:6px">Semaine</label>
+              <select id="wSelect" class="input" style="width:120px"></select>
+              <button id="wToday" class="btn secondary">Aujourd'hui</button>
+              <button id="wPrev" class="btn secondary">← Préc.</button>
+              <button id="wNext" class="btn secondary">Suiv. →</button>
+            </div>
+            <div class="inline" style="align-items:center">
+              <label class="muted" style="margin-right:6px">Filtrer par objectif</label>
+              <select id="objectiveFilter" class="input" style="width:240px"></select>
+              <button id="clearFilter" class="btn secondary">Tous</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="view-current" class="card pad">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <h2>📆 Semaine <span id="labelCurrentWeek">1</span></h2>
+            <div style="min-width:180px;text-align:right">
+              <div class="muted" style="font-size:12px"><span id="cwRateLabel">0%</span> complété</div>
+              <div id="cwProgress" class="progress"><span style="width:0%"></span></div>
+            </div>
+          </div>
+          <div class="inline" style="margin-bottom:10px">
+            <input id="quickTaskTitle" class="input" placeholder="Ajouter une tâche pour cette semaine..." />
+            <button class="btn" id="quickTaskAdd">Ajouter</button>
+          </div>
+          <ul id="currentWeekTasks" class="list"></ul>
+        </section>
+
+        <section id="view-all" class="card pad" hidden>
+          <h2>🗂️ Vue 12 semaines + S13 (rattrapage)</h2>
+          <div id="weeksContainer" class="grid" style="gap:10px"></div>
+        </section>
+
+        <section id="view-bulk" class="card pad" hidden>
+          <h2>⚡ Saisie massive</h2>
+          <p class="muted">Collez vos tâches (une par ligne). Formats acceptés : <code>[S3] Tourner vidéo | Script + tournage</code>, <code>Écrire article</code>, <code>Écrire post | version longue</code></p>
+          <textarea id="bulkInput" rows="8" class="input" placeholder="Modèle conseillé pour les descriptions :
+Quoi :
+Qui :
+Où :
+Quand :
+Comment :
+Combien :
+Pourquoi :
+
+Exemples :
+[S1] Tourner vidéo 1 | Quoi : Script + tournage ; Qui : Moi ; Où : Studio ; Quand : Mar ; Comment : Téléprompteur ; Combien : 4h ; Pourquoi : teaser produit"></textarea>
+          <div class="grid grid-2" style="margin-top:10px">
+            <div class="inline"><label class="muted" style="align-self:center">Semaine par défaut</label><input id="bulkWeek" type="number" min="1" max="13" value="1" class="input" style="width:100px" /></div>
+            <div class="inline"><label class="muted" style="align-self:center">Priorité</label>
+              <select id="bulkPriority" class="input" style="width:140px">
+                <option value="1">Haute</option>
+                <option value="2" selected>Moyenne</option>
+                <option value="3">Basse</option>
+              </select>
+            </div>
+          </div>
+          <div class="inline" style="margin-top:10px">
+            <select id="bulkObjective" class="input">
+              <option value="">— Lier à un objectif (optionnel) —</option>
+            </select>
+            <button id="bulkCreate" class="btn">Créer les tâches</button>
+          </div>
+          <div id="bulkMsg" class="muted" style="margin-top:6px"></div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <dialog id="taskModal">
+    <form method="dialog" class="modal">
+      <header><h3>✏️ Éditer la tâche</h3></header>
+      <div class="body grid" style="gap:12px">
+        <div>
+          <label class="muted">Titre</label>
+          <input id="m_title" class="input" />
+        </div>
+        <div>
+          <label class="muted">Description</label>
+          <textarea id="m_desc" rows="8" class="input" placeholder="Quoi :
+Qui :
+Où :
+Quand :
+Comment :
+Combien :
+Pourquoi :"></textarea>
+        </div>
+        <div class="grid grid-2">
+          <div class="inline"><label class="muted" style="align-self:center">Semaine</label><input id="m_week" type="number" min="1" max="13" class="input" style="width:120px" /></div>
+          <div class="inline"><label class="muted" style="align-self:center">Statut</label>
+            <select id="m_status" class="input" style="width:160px">
+              <option value="todo">À faire</option>
+              <option value="doing">En cours</option>
+              <option value="done">Terminé</option>
+            </select>
+          </div>
+          <div class="inline"><label class="muted" style="align-self:center">Priorité</label>
+            <select id="m_priority" class="input" style="width:160px">
+              <option value="1">Haute</option>
+              <option value="2">Moyenne</option>
+              <option value="3">Basse</option>
+            </select>
+          </div>
+          <div class="inline"><label class="muted" style="align-self:center">Objectif lié</label>
+            <select id="m_objective" class="input"></select>
+          </div>
+        </div>
+      </div>
+      <div class="foot">
+        <button value="delete" class="icon-btn" title="Supprimer"><span aria-hidden="true">🗑️</span></button>
+        <div style="display:flex;gap:8px">
+          <button value="cancel" class="btn secondary">Annuler</button>
+          <button value="save" class="btn">Enregistrer</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <footer>Version 2.6 — Cycles auto/manuels • Progression globale • Filtre par objectif • S13. 🦁</footer>
+
+  <script>
+  (function(){
+    const STORAGE_KEY = 'planner12_state_v3_6';
+    const THEME_KEY = 'planner12_theme_v2_6';
+
+    /** Types (doc) */
+    /** @typedef {{id:string,title:string,description?:string}} Objective */
+    /** @typedef {{id:string,title:string,description:string,week:number,status:'todo'|'doing'|'done',objectiveId:string|null,createdAt:string,priority:1|2|3}} Task */
+
+    const $ = (sel, root=document) => root.querySelector(sel);
+    const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+
+    const uid = () => (crypto.randomUUID ? crypto.randomUUID() : (Date.now()+"_"+Math.random().toString(36).slice(2)));
+    const clamp = (n,min,max)=>Math.max(min,Math.min(max,n));
+    const fmtDate = d => new Date(d).toISOString().slice(0,10);
+    const startOfDay = d => {const dt=new Date(d);dt.setHours(0,0,0,0);return dt};
+
+    function quarterInfo(date=new Date()){
+      const y = date.getFullYear();
+      const m = date.getMonth();
+      let q = 1, start = new Date(y,0,1), end = new Date(y,2,31);
+      if(m>=3 && m<=5){ q=2; start=new Date(y,3,1); end=new Date(y,5,30); }
+      else if(m>=6 && m<=8){ q=3; start=new Date(y,6,1); end=new Date(y,8,30); }
+      else if(m>=9){ q=4; start=new Date(y,9,1); end=new Date(y,11,31); }
+      const mo = ["jan","fév","mar","avr","mai","juin","juil","aoû","sep","oct","nov","déc"];
+      const period = `${start.getDate()} ${mo[start.getMonth()]} ${start.getFullYear()} → ${end.getDate()} ${mo[end.getMonth()]} ${end.getFullYear()}`;
+      return {q, start, end, period};
+    }
+
+    function weekOfCycle(cycleStartISO, today=new Date()){
+      if(!cycleStartISO) return 1;
+      const start = startOfDay(cycleStartISO);
+      const t = startOfDay(today);
+      const diffDays = Math.floor((t - start) / 86400000);
+      const w = Math.floor(diffDays / 7) + 1;
+      return clamp(w,1,12);
+    }
+
+    const state = {
+      objectives: [],
+      tasks: [],
+      cycleStart: null,
+      autoQuarter: true,
+      activeTab: 'current',
+      viewWeek: 1,
+      objectiveFilter: '',
+    };
+
+    function load(){
+      try{ const raw = localStorage.getItem(STORAGE_KEY); if(raw){ Object.assign(state, JSON.parse(raw)); } }catch(e){}
+      if(state.autoQuarter){
+        const qi = quarterInfo(new Date());
+        state.cycleStart = fmtDate(qi.start);
+      } else {
+        if(!state.cycleStart) state.cycleStart = fmtDate(new Date());
+      }
+      const th = localStorage.getItem(THEME_KEY) || 'light';
+      document.documentElement.setAttribute('data-theme', th);
+      $('#btnTheme').textContent = th==='dark' ? 'Mode clair' : 'Mode sombre';
+      if(!state.viewWeek){ state.viewWeek = weekOfCycle(state.cycleStart, new Date()); }
+    }
+    function save(){ try{localStorage.setItem(STORAGE_KEY, JSON.stringify(state))}catch(e){} }
+
+    const elCycleLabel = $('#cycleLabel');
+    const elCyclePeriod = $('#cyclePeriod');
+    const elCycleWeek = $('#cycleWeek');
+    const elGlobalRateLabel = $('#globalRateLabel');
+    const elGlobalProgress = $('#globalProgress').querySelector('span');
+
+    const elObjCount = $('#objCount');
+    const elNewObjective = $('#newObjective');
+    const elAddObjectiveBtn = $('#addObjectiveBtn');
+    const elObjectivesList = $('#objectivesList');
+
+    const tabBtns = $$('.tabs button');
+    const views = { current: $('#view-current'), all: $('#view-all'), bulk: $('#view-bulk') };
+
+    const elQuickTaskTitle = $('#quickTaskTitle');
+    const elQuickTaskAdd = $('#quickTaskAdd');
+    const elCurrentWeekTasks = $('#currentWeekTasks');
+
+    const elWeeksContainer = $('#weeksContainer');
+
+    const elBulkInput = $('#bulkInput');
+    const elBulkWeek = $('#bulkWeek');
+    const elBulkPriority = $('#bulkPriority');
+    const elBulkObjective = $('#bulkObjective');
+    const elBulkCreate = $('#bulkCreate');
+    const elBulkMsg = $('#bulkMsg');
+
+    const modal = $('#taskModal');
+    const mTitle = $('#m_title');
+    const mDesc = $('#m_desc');
+    const mWeek = $('#m_week');
+    const mStatus = $('#m_status');
+    const mPriority = $('#m_priority');
+    const mObjective = $('#m_objective');
+    let editingId = null;
+
+    const wPrev = $('#wPrev');
+    const wNext = $('#wNext');
+    const wSelect = $('#wSelect');
+    const wToday = $('#wToday');
+    const objectiveFilter = $('#objectiveFilter');
+    const clearFilter = $('#clearFilter');
+
+    const autoQuarter = $('#autoQuarter');
+    const manualBlock = $('#manualBlock');
+    const cycleStartInput = $('#cycleStart');
+
+    load();
+    autoQuarter.checked = !!state.autoQuarter;
+    manualBlock.hidden = !!state.autoQuarter;
+    cycleStartInput.value = state.cycleStart || fmtDate(new Date());
+
+    buildWeekControls();
+    updateAll();
+
+    function renderHeader(){
+      const qi = quarterInfo(new Date());
+      elCycleLabel.textContent = `Cycle ${qi.q}`;
+      elCyclePeriod.textContent = qi.period;
+      const cw = weekOfCycle(state.cycleStart, new Date());
+      elCycleWeek.textContent = String(cw);
+      const total = state.tasks.length;
+      const done = state.tasks.filter(t=>t.status==='done').length;
+      const rate = total ? Math.round(done*100/total) : 0;
+      elGlobalRateLabel.textContent = rate + '%';
+      elGlobalProgress.style.width = rate + '%';
+      elGlobalProgress.parentElement.className = 'progress ' + (rate<34?'bad':rate<67?'warn':'');
+    }
+
+    function objectiveStats(id){
+      const tasks = state.tasks.filter(t=> t.objectiveId===id);
+      const total = tasks.length;
+      const done = tasks.filter(t=>t.status==='done').length;
+      const rate = total ? Math.round(done*100/total) : 0;
+      return {total, done, rate};
+    }
+    function renderObjectives(){
+      elObjCount.textContent = String(state.objectives.length);
+      elObjectivesList.innerHTML = '';
+      state.objectives.forEach(o => {
+        const {total, done, rate} = objectiveStats(o.id);
+        const cls = rate<34?'bad':rate<67?'warn':'';
+        const li = document.createElement('li');
+        li.className = 'card pad';
+        li.innerHTML = `
+          <div style="display:flex;gap:8px;align-items:flex-start">
+            <input class="input" data-edit-title value="${escapeHTML(o.title)}" />
+            <button class="icon-btn" title="Supprimer" data-delete><span aria-hidden="true">🗑️</span></button>
+          </div>
+          <textarea class="input" data-edit-desc rows="3" placeholder="Pourquoi est-ce important pour moi d'atteindre cet objectif ?
+Quelles seraient les conséquences négatives si je ne l'atteins pas ?">${escapeHTML(o.description||'')}</textarea>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+            <div class="progress ${cls}" style="flex:1"><span style="width:${rate}%;"></span></div>
+            <small class="muted" style="width:110px;text-align:right">${done}/${total} • ${rate}%</small>
+          </div>
+        `;
+        li.querySelector('[data-edit-title]').addEventListener('input', e=>{ o.title = e.target.value; save(); refreshObjectiveOptions(); renderWeekFilter(); });
+        li.querySelector('[data-edit-desc]').addEventListener('input', e=>{ o.description = e.target.value; save(); });
+        li.querySelector('[data-delete]').addEventListener('click', ()=>{
+          if(!confirm('Supprimer cet objectif ? Les tâches liées resteront mais ne seront plus liées.')) return;
+          state.tasks = state.tasks.map(t=> t.objectiveId===o.id ? {...t, objectiveId:null} : t);
+          state.objectives = state.objectives.filter(x=>x.id!==o.id);
+          save();
+          updateAll();
+        });
+        elObjectivesList.appendChild(li);
+      });
+      refreshObjectiveOptions();
+    }
+    function refreshObjectiveOptions(){
+      elBulkObjective.innerHTML = '<option value="">— Lier à un objectif (optionnel) —</option>' + state.objectives.map(o=>`<option value="${o.id}">${escapeHTML(o.title)}</option>`).join('');
+      mObjective.innerHTML = '<option value="">— Aucun —</option>' + state.objectives.map(o=>`<option value="${o.id}">${escapeHTML(o.title)}</option>`).join('');
+      renderWeekFilter();
+    }
+
+    function weekList(w){
+      if(w===13){
+        return state.tasks.filter(t => (t.week===13) || (t.week>=1 && t.week<=12 && t.status!=='done'));
+      }
+      return state.tasks.filter(t=> t.week===w);
+    }
+    function completionForWeek(w, objectiveId=''){
+      let list = weekList(w);
+      if(objectiveId){ list = list.filter(t=> t.objectiveId===objectiveId); }
+      const total = list.length;
+      const done = list.filter(t=>t.status==='done').length;
+      const rate = total ? Math.round((done/total)*100) : 0;
+      return {total, done, rate, list};
+    }
+
+    function renderCurrentWeek(){
+      const cw = state.viewWeek || weekOfCycle(state.cycleStart, new Date());
+      document.getElementById('labelCurrentWeek').textContent = String(cw);
+      const {rate, list} = completionForWeek(cw, state.objectiveFilter);
+      document.getElementById('cwRateLabel').textContent = rate + '%';
+      document.getElementById('cwProgress').querySelector('span').style.width = rate + '%';
+      document.getElementById('cwProgress').className = 'progress ' + (rate<34?'bad':rate<67?'warn':'');
+      elCurrentWeekTasks.innerHTML = '';
+      const showList = list.sort(sortTasks);
+      if(showList.length===0){
+        elCurrentWeekTasks.innerHTML = `<li class="muted" style="border:1px dashed var(--border);padding:12px;border-radius:12px;text-align:center">Aucune tâche pour cette semaine ${state.objectiveFilter? '(filtrée)': ''}.</li>`;
+      } else {
+        showList.forEach(t=> elCurrentWeekTasks.appendChild(renderTaskRow(t)) );
+      }
+    }
+
+    def_listeners = []
+
+    function renderAllWeeks(){
+      elWeeksContainer.innerHTML = '';
+      for(let w=1; w<=13; w++){
+        const info = completionForWeek(w, '');
+        const list = info.list.sort(sortTasks);
+        const rate = info.rate, total = info.total, done = info.done;
+        const box = document.createElement('div');
+        box.className = 'accordion';
+        const label = w===13 ? 'Semaine 13 (Rattrapage — non réalisés S1–S12 + S13)' : `Semaine ${w}`;
+        box.id = 'week-'+w;
+        box.innerHTML = `
+          <div class="head">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <span class="badge" style="width:24px;height:24px;border-radius:8px">${w}</span>
+              <strong>${label}</strong>
+              <span class="muted">${total} tâche(s) • ${done}/${total} terminé(s)</span>
+              <div style="display:flex;align-items:center;gap:8px;min-width:180px">
+                <div class="progress ${rate<34?'bad':rate<67?'warn':''}" style="flex:1"><span style="width:${rate}%;"></span></div>
+                <small class="muted" style="width:36px;text-align:right">${rate}%</small>
+              </div>
+            </div>
+            <div>+</div>
+          </div>
+          <div class="inner" hidden>
+            <div class="inline" style="margin-bottom:10px">
+              <input class="input" data-add-title placeholder="Ajouter une tâche (${w===13?'S13':'S'+w})..."/>
+              <button class="btn" data-add>Ajouter</button>
+              ${w===13?'<button class="btn secondary" data-gather>Rassembler les non réalisés → S13</button>':''}
+            </div>
+            <ul class="list" data-list></ul>
+          </div>
+        `;
+        const head = box.querySelector('.head');
+        const inner = box.querySelector('.inner');
+        head.addEventListener('click', ()=>{ inner.hidden = !inner.hidden; head.querySelector('div:last-child').textContent = inner.hidden?'+':'−'; });
+        const addBtn = box.querySelector('[data-add]');
+        const addInput = box.querySelector('[data-add-title]');
+        const ul = box.querySelector('[data-list]');
+        addBtn.addEventListener('click', ()=>{ if(!addInput.value.trim()) return; createTask({title:addInput.value.trim(), week:w}); addInput.value=''; updateAll(); });
+        addInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ addBtn.click(); }});
+        if(w===13){
+          const gatherBtn = box.querySelector('[data-gather]');
+          gatherBtn.addEventListener('click', ()=>{ gatherToWeek13(); });
+        }
+        if(list.length===0){
+          ul.innerHTML = `<li class="muted" style="border:1px dashed var(--border);padding:12px;border-radius:12px;text-align:center">Aucune tâche.</li>`;
+        } else {
+          list.forEach(t=> ul.appendChild(renderTaskRow(t)) );
+        }
+        elWeeksContainer.appendChild(box);
+      }
+    }
+
+    function renderTabs(){
+      tabBtns.forEach(btn=>{
+        const id = btn.getAttribute('data-tab');
+        btn.classList.toggle('active', state.activeTab===id);
+      });
+      Object.entries(views).forEach(([id,el])=>{ el.hidden = state.activeTab!==id; });
+    }
+
+    function render(){
+      renderHeader();
+      renderTabs();
+      renderObjectives();
+      renderCurrentWeek();
+      renderAllWeeks();
+      syncWeekControls();
+      renderWeekFilter();
+    }
+
+    function updateAll(){ save(); render(); }
+
+    function sortTasks(a,b){ return (a.priority - b.priority) || a.title.localeCompare(b.title); }
+    function statusBadge(s){ if(s==='todo') return {label:'À faire', cls:'gray'}; if(s==='doing') return {label:'En cours', cls:'yellow'}; return {label:'Terminé', cls:'green'}; }
+    function priorityBadge(p){ const map={1:{label:'Haute',cls:'pink'},2:{label:'Moyenne',cls:'purple'},3:{label:'Basse',cls:'gray'}};return map[p]||map[2]; }
+    function nextStatus(s){ return s==='todo'?'doing':(s==='doing'?'done':'todo'); }
+    function escapeHTML(str){ return String(str).replace(/[&<>"]+/g, s=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[s])); }
+
+    function renderTaskRow(t){
+      const li = document.createElement('li');
+      li.className = 'row-task';
+      const sb = statusBadge(t.status); const pb = priorityBadge(t.priority);
+      const obj = t.objectiveId ? state.objectives.find(o=>o.id===t.objectiveId) : null;
+      li.innerHTML = `
+        <div class="checkbox ${t.status==='done'?'done':''}" data-toggle title="Basculer le statut">${t.status==='done'?'✓':''}</div>
+        <div style="flex:1">
+          <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+            <span class="title">${escapeHTML(t.title)}</span>
+            <span class="chip ${sb.cls}">${sb.label}</span>
+            <span class="chip ${pb.cls}">Priorité ${t.priority}</span>
+            <span class="chip">Semaine ${t.week}</span>
+            ${obj?`<span class="chip purple" title="Objectif">🎯 ${escapeHTML(obj.title)}</span>`:''}
+          </div>
+          ${t.description?`<div class="muted" style="margin-top:4px;white-space:pre-wrap">${escapeHTML(t.description)}</div>`:''}
+          <div class="actions"><a data-open>Ouvrir</a><a data-to13>→ S13</a><a data-delete class="muted">Supprimer</a></div>
+        </div>
+      `;
+      li.querySelector('[data-toggle]').addEventListener('click', ()=>{ t.status = nextStatus(t.status); updateAll(); });
+      li.querySelector('[data-open]').addEventListener('click', ()=> openTaskModal(t.id));
+      li.querySelector('[data-to13]').addEventListener('click', ()=>{ t.week = 13; updateAll(); });
+      li.querySelector('[data-delete]').addEventListener('click', ()=>{ state.tasks = state.tasks.filter(x=>x.id!==t.id); updateAll(); });
+      return li;
+    }
+
+    function createTask({title, description='', week, status='todo', objectiveId=null, priority=2}){
+      const t = { id:uid(), title:title.trim()||'Nouvelle tâche', description, week:clamp(Number(week)||1,1,13), status, objectiveId, createdAt:new Date().toISOString(), priority:Number(priority)||2 };
+      state.tasks.unshift(t);
+      return t;
+    }
+
+    function gatherToWeek13(){
+      let moved = 0;
+      state.tasks.forEach(t=>{
+        if(t.week>=1 && t.week<=12 && t.status!=='done'){ t.week = 13; moved++; }
+      });
+      updateAll();
+      alert(moved + ' tâche(s) rassemblée(s) en S13.');
+    }
+
+    function buildWeekControls(){
+      wSelect.innerHTML = Array.from({length:13}, (_,i)=>`<option value="${i+1}">Semaine ${i+1}</option>`).join('');
+      wSelect.addEventListener('change', ()=>{ state.viewWeek = parseInt(wSelect.value,10)||1; updateAll(); });
+      wPrev.addEventListener('click', ()=>{ state.viewWeek = clamp((state.viewWeek||1)-1,1,13); updateAll(); });
+      wNext.addEventListener('click', ()=>{ state.viewWeek = clamp((state.viewWeek||1)+1,1,13); updateAll(); });
+      wToday.addEventListener('click', ()=>{ state.viewWeek = weekOfCycle(state.cycleStart, new Date()); updateAll(); });
+      window.addEventListener('keydown', (e)=>{
+        if(e.target && (e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA')) return;
+        if(e.key==='ArrowLeft'){ state.viewWeek = clamp((state.viewWeek||1)-1,1,13); updateAll(); }
+        if(e.key==='ArrowRight'){ state.viewWeek = clamp((state.viewWeek||1)+1,1,13); updateAll(); }
+      });
+    }
+    function syncWeekControls(){
+      wSelect.value = String(state.viewWeek||1);
+      document.getElementById('labelCurrentWeek').textContent = String(state.viewWeek||1);
+    }
+    function renderWeekFilter(){
+      objectiveFilter.innerHTML = '<option value="">— Tous les objectifs —</option>' + state.objectives.map(o=>`<option value="${o.id}">${escapeHTML(o.title)}</option>`).join('');
+      objectiveFilter.value = state.objectiveFilter;
+    }
+    objectiveFilter.addEventListener('change', ()=>{ state.objectiveFilter = objectiveFilter.value; updateAll(); });
+    clearFilter.addEventListener('click', ()=>{ state.objectiveFilter=''; objectiveFilter.value=''; updateAll(); });
+
+    autoQuarter.addEventListener('change', ()=>{
+      state.autoQuarter = autoQuarter.checked;
+      manualBlock.hidden = state.autoQuarter;
+      if(state.autoQuarter){
+        const qi = quarterInfo(new Date());
+        state.cycleStart = fmtDate(qi.start);
+      } else {
+        if(!state.cycleStart) state.cycleStart = fmtDate(new Date());
+      }
+      cycleStartInput.value = state.cycleStart;
+      state.viewWeek = weekOfCycle(state.cycleStart, new Date());
+      updateAll();
+    });
+
+    cycleStartInput.addEventListener('change', ()=>{
+      if(!state.autoQuarter){
+        state.cycleStart = cycleStartInput.value || fmtDate(new Date());
+        state.viewWeek = weekOfCycle(state.cycleStart, new Date());
+        updateAll();
+      }
+    });
+
+    tabBtns.forEach(btn=> btn.addEventListener('click', ()=>{ state.activeTab = btn.getAttribute('data-tab'); updateAll(); }));
+
+    document.getElementById('addObjectiveBtn').addEventListener('click', ()=>{
+      const title = elNewObjective.value.trim();
+      if(!title) return;
+      state.objectives.unshift({id:uid(), title, description:''});
+      elNewObjective.value='';
+      updateAll();
+    });
+    elNewObjective.addEventListener('keydown', e=>{ if(e.key==='Enter'){ document.getElementById('addObjectiveBtn').click(); }});
+
+    document.getElementById('quickTaskAdd').addEventListener('click', ()=>{
+      const v = elQuickTaskTitle.value.trim();
+      if(!v) return;
+      const w = state.viewWeek || weekOfCycle(state.cycleStart, new Date());
+      createTask({title:v, week:w});
+      elQuickTaskTitle.value='';
+      updateAll();
+    });
+    elQuickTaskTitle.addEventListener('keydown', e=>{ if(e.key==='Enter'){ document.getElementById('quickTaskAdd').click(); }});
+
+    function openTaskModal(id){
+      const t = state.tasks.find(x=>x.id===id);
+      if(!t) return;
+      editingId = id;
+      mTitle.value = t.title;
+      mDesc.value = t.description||'';
+      mWeek.value = t.week;
+      mStatus.value = t.status;
+      mPriority.value = String(t.priority);
+      mObjective.value = t.objectiveId || '';
+      modal.showModal();
+    }
+    modal.addEventListener('close', ()=>{ editingId = null; });
+    modal.addEventListener('submit', (e)=>{
+      const val = e.submitter?.value;
+      if(!editingId) return;
+      const idx = state.tasks.findIndex(x=>x.id===editingId);
+      if(idx<0) return;
+      if(val==='delete'){
+        state.tasks.splice(idx,1);
+      } else if(val==='save'){
+        const t = state.tasks[idx];
+        t.title = mTitle.value.trim()||t.title;
+        t.description = mDesc.value;
+        t.week = clamp(parseInt(mWeek.value||'1',10),1,13);
+        t.status = /** @type any */(mStatus.value);
+        t.priority = /** @type any */(parseInt(mPriority.value||'2',10));
+        t.objectiveId = mObjective.value || null;
+      }
+      save();
+      renderHeader();
+      renderCurrentWeek();
+      renderAllWeeks();
+      syncWeekControls();
+    });
+
+    const btnExportJSON = document.getElementById('btnExportJSON');
+    const fileImport = document.getElementById('fileImport');
+    const btnExportCSV = document.getElementById('btnExportCSV');
+    const btnDuplicate = document.getElementById('btnDuplicate');
+    const btnGatherS13 = document.getElementById('btnGatherS13');
+    const btnTheme = document.getElementById('btnTheme');
+
+    btnExportJSON.addEventListener('click', ()=>{
+      const data = JSON.stringify(state, null, 2);
+      downloadBlob(new Blob([data], {type:'application/json'}), 'planner12-v2.6-export.json');
+    });
+    fileImport.addEventListener('change', async ()=>{
+      const f = fileImport.files?.[0]; if(!f) return;
+      try{
+        const text = await f.text();
+        const obj = JSON.parse(text);
+        if(!obj || !Array.isArray(obj.tasks) || !Array.isArray(obj.objectives)) throw new Error('Format invalide');
+        if(!confirm('Importer ces données et remplacer l\'état actuel ?')) return;
+        state.objectives = obj.objectives;
+        state.tasks = obj.tasks.map(t => ({...t, week: clamp(Number(t.week)||1,1,13)}));
+        if(state.autoQuarter){
+          const qi = quarterInfo(new Date());
+          state.cycleStart = fmtDate(qi.start);
+        } else {
+          state.cycleStart = obj.cycleStart || state.cycleStart;
+        }
+        state.activeTab = obj.activeTab || 'current';
+        state.viewWeek = clamp(obj.viewWeek || weekOfCycle(state.cycleStart, new Date()),1,13);
+        updateAll();
+        alert('Import réussi.');
+      }catch(e){ alert('Import échoué : '+e.message); }
+      finally{ fileImport.value=''; }
+    });
+
+    btnExportCSV.addEventListener('click', ()=>{
+      const headers = ['id','title','description','week','status','priority','objectiveId','createdAt'];
+      const rows = [headers.join(',')];
+      for(const t of state.tasks){
+        const vals = [t.id, t.title, t.description, t.week, t.status, t.priority, t.objectiveId||'', t.createdAt].map(v => csvEscape(String(v ?? '')));
+        rows.push(vals.join(','));
+      }
+      const csv = rows.join('\n');
+      downloadBlob(new Blob([csv], {type:'text/csv'}), 'planner12-v2.6-taches.csv');
+    });
+
+    btnDuplicate.addEventListener('click', ()=>{
+      if(!confirm('Dupliquer ce cycle ? Réinitialise les statuts, conserve objectifs et semaines.')) return;
+      const newTasks = state.tasks.map(t => ({
+        id: uid(),
+        title: t.title,
+        description: t.description,
+        week: clamp(t.week,1,13),
+        status: 'todo',
+        objectiveId: t.objectiveId,
+        createdAt: new Date().toISOString(),
+        priority: t.priority
+      }));
+      state.tasks = newTasks;
+      if(state.autoQuarter){
+        const qi = quarterInfo(new Date());
+        state.cycleStart = fmtDate(qi.start);
+      }
+      state.activeTab = 'current';
+      state.viewWeek = weekOfCycle(state.cycleStart, new Date());
+      updateAll();
+      alert('Cycle dupliqué.');
+    });
+
+    btnGatherS13.addEventListener('click', gatherToWeek13);
+
+    btnTheme.addEventListener('click', ()=>{
+      const cur = document.documentElement.getAttribute('data-theme') || 'light';
+      const next = cur==='light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem(THEME_KEY, next);
+      btnTheme.textContent = next==='dark' ? 'Mode clair' : 'Mode sombre';
+    });
+
+    function csvEscape(s){ if(s.includes('"') || s.includes(',') || s.includes('\n')){ return '"' + s.replace(/"/g,'""') + '"'; } return s; }
+    function downloadBlob(blob, filename){ const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = filename; a.click(); setTimeout(()=> URL.revokeObjectURL(url), 500); }
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js').catch(console.error);
+      });
+    }
+  })();
+  </script>
+</body>
+</html>
